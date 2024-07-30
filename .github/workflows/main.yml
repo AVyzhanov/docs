@@ -10,36 +10,43 @@ jobs:
   render-diagrams:
     runs-on: ubuntu-latest
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Get all changes files
-        id: get-changed-files
-        uses: jitterbit/get-changed-files@v1
-        
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+          since_last_remote_commit: true 
+
+      - name: List all changed files
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: |
+          for file in ${ALL_CHANGED_FILES}; do
+            echo "$file was changed"
+          done
+
       - name: Get changed UML files
         id: get-changed-uml-files
         run: |
           puml_files=''
-          for changed_file in ${{ steps.get-changed-files.outputs.modified }}; do
+          for changed_file in ${{ steps.changed-files.outputs.all_changed_files }}; do
             extension="${changed_file##*.}"
 
             if [ "${extension}" == "puml" ]; then
-              # add puml file
               puml_files="${puml_files} ${changed_file}"
               echo "Added file: ${changed_file}"
             fi
           done
           echo "puml-files=${puml_files}" >> $GITHUB_OUTPUT
-
+          
       - name: Generate SVG Diagrams
         uses: dreamsinbits/export-plantuml-action@v1
         with:
           args: -v -o out -tsvg ${{ steps.get-changed-uml-files.outputs.puml-files }}
           
       - name: Push Local Changes
-        uses:  stefanzweifel/git-auto-commit-action@v4.1.2 
+        uses:  stefanzweifel/git-auto-commit-action@v5
         with: 
           commit_user_name: "PlantUML Diagramm Renderer"
           commit_user_email: "plantuml@your-domain.com"
