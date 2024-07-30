@@ -27,16 +27,25 @@ jobs:
             echo "$file was changed"
           done
 
+      - name: List all changed files
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: |
+          for file in ${ALL_CHANGED_FILES}; do
+            echo "$file was changed"
+          done
+
       - name: Get changed UML files
         id: get-changed-uml-files
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
           puml_files=''
-          for changed_file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            extension="${changed_file##*.}"
-
+          for file in ${ALL_CHANGED_FILES}; do
+            extension="${file##*.}"
             if [ "${extension}" == "puml" ]; then
-              puml_files="${puml_files} ${changed_file}"
-              echo "Added file: ${changed_file}"
+              puml_files="${puml_files} ${file}"
+              echo "Added file: ${file}"
             fi
           done
           echo "puml-files=${puml_files}" >> $GITHUB_OUTPUT
